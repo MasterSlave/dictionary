@@ -13,6 +13,9 @@ import com.vaadin.ui.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 /**
  * @author Burak Baldirlioglu
  * @since 4/16/2017 10:39 AM
@@ -26,9 +29,8 @@ public class DictionaryUI extends UI {
     private GridLayout gridLayout;
     private Grid<Dictionary> grid;
     private TextField textField;
-    private Button addWordButton;
-    private Button getAllWordButton;
-    private Button getSingleWordButton;
+
+    private List<Dictionary> words;
 
     @Autowired
     DictionaryUI(DictionaryService dictionaryService) {
@@ -52,9 +54,10 @@ public class DictionaryUI extends UI {
                 addWordClicked(null);
             }
         });
-        addWordButton = new Button("Add", this::addWordClicked);
-        getAllWordButton = new Button("See/Hide All Words", this::getAllWordClicked);
-        getSingleWordButton = new Button("Try a Word", this::getSingleWordClicked);
+        Button addWordButton = new Button("Add", this::addWordClicked);
+        Button getAllWordButton = new Button("See/Hide All Words", this::getAllWordClicked);
+        Button getSingleWordButton = new Button("Try a Word", this::getSingleWordClicked);
+        getSingleWordButton.setVisible(false);
 
         FormLayout formLayout = new FormLayout();
         formLayout.addComponent(textField);
@@ -70,7 +73,8 @@ public class DictionaryUI extends UI {
     }
 
     private void setItems() {
-        grid.setItems(dictionaryService.getAllWords());
+        words = dictionaryService.getAllWords();
+        grid.setItems(words);
     }
 
     private void addWordClicked(Button.ClickEvent clickEvent) {
@@ -86,13 +90,23 @@ public class DictionaryUI extends UI {
         }
         try {
             dictionaryService.addNewWord(value);
+            showInfoMessage(value);
         } catch (Exception e) {
             String description = e.getMessage() != null ? e.getMessage() : e.toString();
-            Notification notification = new Notification("Error occured:", description);
-            notification.show(Page.getCurrent());
+            showErrorMessage(description);
             return;
         }
         resetToDefault();
+    }
+
+    private void showInfoMessage(String message) {
+        Notification notification = new Notification("New word added:", message, Notification.Type.HUMANIZED_MESSAGE);
+        notification.show(Page.getCurrent());
+    }
+
+    private void showErrorMessage(String description) {
+        Notification notification = new Notification("Error occured:", description, Notification.Type.ERROR_MESSAGE);
+        notification.show(Page.getCurrent());
     }
 
     private void getAllWordClicked(Button.ClickEvent clickEvent) {
@@ -105,7 +119,8 @@ public class DictionaryUI extends UI {
     }
 
     private void getSingleWordClicked(Button.ClickEvent clickEvent) {
-
+        Dictionary dictionary = words.get(LocalDateTime.now().getNano() % words.size());
+        String word = dictionary.getWord();
     }
 
     private void resetToDefault() {
@@ -114,7 +129,6 @@ public class DictionaryUI extends UI {
             setItems();
         }
     }
-
     /*@WebServlet(urlPatterns = "*//*", name = "DictionaryUIServlet", asyncSupported = true)
     @VaadinServletConfiguration(ui = DictionaryUI.class, productionMode = false)
     public static class DictionaryUIServlet extends VaadinServlet {

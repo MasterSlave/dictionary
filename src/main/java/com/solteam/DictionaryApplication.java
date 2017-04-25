@@ -1,38 +1,50 @@
 package com.solteam;
 
-import com.solteam.dictionary.domain.Dictionary;
 import com.solteam.dictionary.service.DictionaryService;
-import com.vaadin.annotations.Theme;
-import com.vaadin.server.VaadinRequest;
-import com.vaadin.spring.annotation.SpringUI;
-import com.vaadin.ui.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.util.StringUtils;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.stream.Stream;
 
 @SpringBootApplication
 public class DictionaryApplication {
 
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
     public static void main(String[] args) {
         SpringApplication.run(DictionaryApplication.class, args);
     }
 
+    private DictionaryService dictionaryService;
 
     @Bean
     CommandLineRunner commandLineRunner(DictionaryService dictionaryService) {
+        this.dictionaryService = dictionaryService;
         return args -> {
-            Stream.of("Dammit", "Goal", "Grill").forEach(dictionaryService::addNewWord);
+            Stream.of("Dammit", "Goal", "Grill").forEach(this::addWord);
 
             dictionaryService.getAllWords().forEach(System.out::println);
         };
     }
 
+    private void addWord(String newWord) {
+        try {
+            dictionaryService.addNewWord(newWord);
+        } catch (Exception e) {
+            logger.info("Error while adding some stuff : ", e);
+        }
+    }
+
 }
+
+
 
 /*
 @RestController("/dictionary")
